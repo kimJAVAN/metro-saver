@@ -14,7 +14,144 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      alarm_history: {
+        Row: {
+          alarm_time: string
+          created_at: string
+          from_location: string
+          id: string
+          last_train_time: string
+          notification_type: string
+          to_location: string
+          user_id: string
+          was_dismissed: boolean
+        }
+        Insert: {
+          alarm_time: string
+          created_at?: string
+          from_location: string
+          id?: string
+          last_train_time: string
+          notification_type: string
+          to_location: string
+          user_id: string
+          was_dismissed?: boolean
+        }
+        Update: {
+          alarm_time?: string
+          created_at?: string
+          from_location?: string
+          id?: string
+          last_train_time?: string
+          notification_type?: string
+          to_location?: string
+          user_id?: string
+          was_dismissed?: boolean
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          created_at: string
+          email: string
+          full_name: string | null
+          id: string
+          phone_number: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          full_name?: string | null
+          id: string
+          phone_number?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          full_name?: string | null
+          id?: string
+          phone_number?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      saved_routes: {
+        Row: {
+          created_at: string
+          from_location: string
+          id: string
+          is_favorite: boolean
+          route_data: Json
+          route_name: string
+          to_location: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          from_location: string
+          id?: string
+          is_favorite?: boolean
+          route_data: Json
+          route_name: string
+          to_location: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          from_location?: string
+          id?: string
+          is_favorite?: boolean
+          route_data?: Json
+          route_name?: string
+          to_location?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_preferences: {
+        Row: {
+          auto_detect_location: boolean
+          created_at: string
+          enable_push_notification: boolean
+          enable_sms_notification: boolean
+          home_latitude: number | null
+          home_location: string
+          home_longitude: number | null
+          id: string
+          notification_time: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          auto_detect_location?: boolean
+          created_at?: string
+          enable_push_notification?: boolean
+          enable_sms_notification?: boolean
+          home_latitude?: number | null
+          home_location: string
+          home_longitude?: number | null
+          id?: string
+          notification_time?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          auto_detect_location?: boolean
+          created_at?: string
+          enable_push_notification?: boolean
+          enable_sms_notification?: boolean
+          home_latitude?: number | null
+          home_location?: string
+          home_longitude?: number | null
+          id?: string
+          notification_time?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
