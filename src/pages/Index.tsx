@@ -1,13 +1,25 @@
-import { useState } from "react";
-import { Bell, Share2 } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Bell, Share2, LogOut, Settings } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { LastTrainTimer } from "@/components/LastTrainTimer";
 import { LocationSelector } from "@/components/LocationSelector";
 import { RouteCard } from "@/components/RouteCard";
 import { TaxiFareEstimate } from "@/components/TaxiFareEstimate";
 import { toast } from "sonner";
+import { useAuth } from "@/contexts/AuthContext";
+import { useNavigate } from "react-router-dom";
 
 const Index = () => {
+  const { user, loading, signOut } = useAuth();
+  const navigate = useNavigate();
+  
+  // Redirect to auth page if not logged in
+  useEffect(() => {
+    if (!loading && !user) {
+      navigate("/auth");
+    }
+  }, [user, loading, navigate]);
+
   // 예시 데이터 - 실제로는 API에서 가져올 데이터
   const [currentLocation] = useState("강남역");
   const [homeLocation] = useState("노원역");
@@ -51,6 +63,26 @@ const Index = () => {
     toast.success("집 위치를 설정했습니다");
   };
 
+  const handleSignOut = async () => {
+    await signOut();
+    toast.success("로그아웃되었습니다");
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-night flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-muted-foreground">로딩 중...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return null;
+  }
+
   return (
     <div className="min-h-screen bg-gradient-night">
       <div className="container max-w-2xl mx-auto px-4 py-6 space-y-6">
@@ -60,11 +92,16 @@ const Index = () => {
             <h1 className="text-2xl font-bold text-gradient-sunset">
               막차 알림
             </h1>
-            <p className="text-sm text-muted-foreground">놓치지 말고 안전하게 귀가하세요</p>
+            <p className="text-sm text-muted-foreground">
+              {user.email}님, 안녕하세요!
+            </p>
           </div>
           <div className="flex gap-2">
             <Button variant="outline" size="icon" onClick={handleShareLocation}>
               <Share2 className="w-4 h-4" />
+            </Button>
+            <Button variant="outline" size="icon" onClick={handleSignOut}>
+              <LogOut className="w-4 h-4" />
             </Button>
           </div>
         </header>
