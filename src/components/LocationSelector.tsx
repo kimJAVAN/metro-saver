@@ -1,4 +1,4 @@
-import { MapPin, Home } from "lucide-react";
+import { MapPin, Home, Search, RefreshCw } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 
@@ -7,6 +7,7 @@ interface LocationSelectorProps {
   homeLocation: string;
   onSetHome: () => void;
   onRefreshLocation: () => void;
+  isLoadingLocation?: boolean;
 }
 
 export const LocationSelector = ({
@@ -14,6 +15,7 @@ export const LocationSelector = ({
   homeLocation,
   onSetHome,
   onRefreshLocation,
+  isLoadingLocation = false,
 }: LocationSelectorProps) => {
   return (
     <Card className="p-4 bg-card border-border shadow-[var(--shadow-card)]">
@@ -24,13 +26,22 @@ export const LocationSelector = ({
           </div>
           <div className="flex-1 min-w-0">
             <p className="text-xs text-muted-foreground mb-1">현재 위치</p>
-            <p className="text-sm font-medium truncate">{currentLocation}</p>
+            {isLoadingLocation ? (
+              <div className="flex items-center gap-2">
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary"></div>
+                <p className="text-sm text-muted-foreground">위치 확인 중...</p>
+              </div>
+            ) : (
+              <p className="text-sm font-medium truncate">{currentLocation}</p>
+            )}
             <Button
               variant="ghost"
               size="sm"
               onClick={onRefreshLocation}
+              disabled={isLoadingLocation}
               className="mt-2 h-7 text-xs"
             >
+              <RefreshCw className={`w-3 h-3 mr-1 ${isLoadingLocation ? 'animate-spin' : ''}`} />
               위치 새로고침
             </Button>
           </div>
@@ -51,7 +62,8 @@ export const LocationSelector = ({
               onClick={onSetHome}
               className="mt-2 h-7 text-xs"
             >
-              집 위치 설정
+              <Search className="w-3 h-3 mr-1" />
+              집 위치 검색
             </Button>
           </div>
         </div>

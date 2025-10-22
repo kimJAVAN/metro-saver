@@ -6,12 +6,18 @@ import { LocationSelector } from "@/components/LocationSelector";
 import { LastTrainTimer } from "@/components/LastTrainTimer";
 import { RouteCard } from "@/components/RouteCard";
 import { TaxiFareEstimate } from "@/components/TaxiFareEstimate";
+import { AddressSearchDialog } from "@/components/AddressSearchDialog";
 import { toast } from "@/hooks/use-toast";
+import { useGeolocation } from "@/hooks/useGeolocation";
+import { useLocalStorage } from "@/hooks/useLocalStorage";
 
 const Index = () => {
-  const [currentLocation, setCurrentLocation] = useState("강남역");
-  const [homeLocation, setHomeLocation] = useState("집 위치를 설정하세요");
+  const { latitude, longitude, error: locationError, loading: loadingLocation, refetch: refetchLocation } = useGeolocation();
+  const [homeLocation, setHomeLocation] = useLocalStorage<string>("homeLocation", "집 위치를 설정하세요");
+  const [searchHistory, setSearchHistory] = useLocalStorage<string[]>("addressSearchHistory", []);
   const [notificationEnabled, setNotificationEnabled] = useState(false);
+  const [showSearchDialog, setShowSearchDialog] = useState(false);
+  const [currentLocation, setCurrentLocation] = useState("위치 확인 중...");
 
   useEffect(() => {
     // 알림 권한 확인
@@ -21,6 +27,16 @@ const Index = () => {
       }
     }
   }, []);
+
+  useEffect(() => {
+    // 위치 정보 업데이트
+    if (locationError) {
+      setCurrentLocation(locationError);
+    } else if (latitude && longitude) {
+      // 실제로는 역지오코딩 API를 사용해서 주소로 변환
+      setCurrentLocation(`${latitude.toFixed(4)}, ${longitude.toFixed(4)}`);
+    }
+  }, [latitude, longitude, locationError]);
 
   const requestNotificationPermission = async () => {
     if (!("Notification" in window)) {
@@ -64,14 +80,34 @@ const Index = () => {
   };
 
   const handleSetHome = () => {
-    setHomeLocation("서울시 강남구 역삼동");
+    setShowSearchDialog(true);
+  };
+
+  const handleSelectAddress = (address: string) => {
+    setHomeLocation(address);
+    
+    // 검색 기록에 추가 (중복 제거)
+    setSearchHistory((prev) => {
+      const filtered = prev.filter((item) => item !== address);
+      return [address, ...filtered].slice(0, 10); // 최대 10개까지 저장
+    });
+
     toast({
       title: "집 위치 설정 완료",
-      description: "집 위치가 저장되었습니다.",
+      description: address,
+    });
+  };
+
+  const handleClearHistory = () => {
+    setSearchHistory([]);
+    toast({
+      title: "검색 기록 삭제",
+      description: "모든 검색 기록이 삭제되었습니다.",
     });
   };
 
   const handleRefreshLocation = () => {
+    refetchLocation();
     toast({
       title: "위치 갱신 중",
       description: "현재 위치를 갱신하고 있습니다...",
@@ -142,6 +178,16 @@ const Index = () => {
           homeLocation={homeLocation}
           onSetHome={handleSetHome}
           onRefreshLocation={handleRefreshLocation}
+          isLoadingLocation={loadingLocation}
+        />
+
+        {/* 주소 검색 다이얼로그 */}
+        <AddressSearchDialog
+          open={showSearchDialog}
+          onOpenChange={setShowSearchDialog}
+          onSelectAddress={handleSelectAddress}
+          searchHistory={searchHistory}
+          onClearHistory={handleClearHistory}
         />
 
         {/* 막차 타이머 */}
