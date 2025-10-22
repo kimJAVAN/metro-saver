@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Train, Clock, Bell } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -10,9 +10,10 @@ import { AddressSearchDialog } from "@/components/AddressSearchDialog";
 import { toast } from "@/hooks/use-toast";
 import { useGeolocation } from "@/hooks/useGeolocation";
 import { useLocalStorage } from "@/hooks/useLocalStorage";
+import { calculateRoute } from "@/utils/routeCalculator";
 
 const Index = () => {
-  const { latitude, longitude, error: locationError, loading: loadingLocation, refetch: refetchLocation } = useGeolocation();
+  const { address, error: locationError, loading: loadingLocation, refetch: refetchLocation } = useGeolocation();
   const [homeLocation, setHomeLocation] = useLocalStorage<string>("homeLocation", "집 위치를 설정하세요");
   const [searchHistory, setSearchHistory] = useLocalStorage<string[]>("addressSearchHistory", []);
   const [notificationEnabled, setNotificationEnabled] = useState(false);
@@ -32,11 +33,20 @@ const Index = () => {
     // 위치 정보 업데이트
     if (locationError) {
       setCurrentLocation(locationError);
-    } else if (latitude && longitude) {
-      // 실제로는 역지오코딩 API를 사용해서 주소로 변환
-      setCurrentLocation(`${latitude.toFixed(4)}, ${longitude.toFixed(4)}`);
+    } else if (address) {
+      setCurrentLocation(address);
     }
-  }, [latitude, longitude, locationError]);
+  }, [address, locationError]);
+
+  // 경로 계산 (현재 위치와 집 위치가 모두 설정되었을 때)
+  const routeInfo = useMemo(() => {
+    if (currentLocation === "위치 확인 중..." || 
+        currentLocation === locationError || 
+        homeLocation === "집 위치를 설정하세요") {
+      return null;
+    }
+    return calculateRoute(currentLocation, homeLocation);
+  }, [currentLocation, homeLocation, locationError]);
 
   const requestNotificationPermission = async () => {
     if (!("Notification" in window)) {
@@ -121,23 +131,6 @@ const Index = () => {
     });
   };
 
-  const mockRoute = [
-    {
-      type: "subway" as const,
-      line: "2호선",
-      lineColor: "#00A84D",
-      from: "강남역",
-      to: "역삼역",
-      duration: 3,
-    },
-    {
-      type: "walk" as const,
-      from: "역삼역",
-      to: "집",
-      duration: 7,
-    },
-  ];
-
   return (
     <div className="min-h-screen bg-background p-4 md:p-8">
       <div className="max-w-4xl mx-auto space-y-6">
@@ -190,28 +183,41 @@ const Index = () => {
           onClearHistory={handleClearHistory}
         />
 
-        {/* 막차 타이머 */}
-        <LastTrainTimer 
-          departureTime="23:45" 
-          travelTime={10}
-          notificationEnabled={notificationEnabled}
-        />
+        {/* 경로 정보가 있을 때만 표시 */}
+        {routeInfo ? (
+          <>
+            {/* 막차 타이머 */}
+            <LastTrainTimer 
+              departureTime={routeInfo.lastTrainTime} 
+              travelTime={routeInfo.totalTime}
+              notificationEnabled={notificationEnabled}
+            />
 
-        {/* 추천 경로 */}
-        <div className="space-y-4">
-          <div className="flex items-center gap-2">
-            <Clock className="w-5 h-5 text-primary" />
-            <h2 className="text-xl font-bold">추천 경로</h2>
-          </div>
-          <RouteCard route={mockRoute} totalTime={10} />
-        </div>
+            {/* 추천 경로 */}
+            <div className="space-y-4">
+              <div className="flex items-center gap-2">
+                <Clock className="w-5 h-5 text-primary" />
+                <h2 className="text-xl font-bold">추천 경로</h2>
+              </div>
+              <RouteCard route={routeInfo.route} totalTime={routeInfo.totalTime} />
+            </div>
 
-        {/* 택시 요금 예상 */}
-        <TaxiFareEstimate
-          estimatedFare={15000}
-          distance={8.5}
-          onCallTaxi={handleCallTaxi}
-        />
+            {/* 택시 요금 예상 */}
+            <TaxiFareEstimate
+              estimatedFare={routeInfo.taxiFare}
+              distance={routeInfo.distance}
+              onCallTaxi={handleCallTaxi}
+            />
+          </>
+        ) : (
+          <Card className="p-8 text-center">
+            <p className="text-muted-foreground">
+              {homeLocation === "집 위치를 설정하세요" 
+                ? "집 위치를 설정하면 막차 정보를 확인할 수 있습니다."
+                : "현재 위치를 확인하는 중입니다..."}
+            </p>
+          </Card>
+        )}
       </div>
     </div>
   );
